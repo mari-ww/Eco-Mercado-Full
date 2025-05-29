@@ -27,7 +27,18 @@ app.get('/teste', (req,res)=>{
   res.send("Produtos - Teste!")
 })
 
-const PORT = 3000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {  // Adicione '0.0.0.0'
   console.log(`Serviço de produtos rodando na porta ${PORT}`);
 });
+
+// Health Check Simples
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'online', service: 'produtos' });
+});
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));

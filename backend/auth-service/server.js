@@ -114,6 +114,7 @@ app.get('/protegido', authenticateToken, (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
+  console.log('✅ Health check executado');
   res.status(200).json({ status: 'online' });
 });
 

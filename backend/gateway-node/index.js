@@ -28,8 +28,8 @@ fastify.addHook('onRequest', async (request, reply) => {
 
   
   const token = request.headers['authorization'];
-  if (token !== '123456789') {
-    return reply.code(401).send({ error: 'Não autorizado mané' });
+  if (!token) {
+    return reply.code(401).send({ error: 'Token não fornecido' });
   }
 });
 
@@ -199,4 +199,15 @@ fastify.listen({ port: PORT , host: '0.0.0.0' }, (err, address) => {
     process.exit(1);
   }
   fastify.log.info(`🚀 Gateway rodando em ${address}`);
+});
+
+// Adicionar após as outras rotas de produtos:
+fastify.get('/produtos*', async (request, reply) => {
+  try {
+    const path = request.url.replace('/produtos', '');
+    const data = await produtosBreaker.fire(path, request.headers);
+    reply.send(data);
+  } catch (err) {
+    reply.code(503).send({ error: 'Erro no serviço de produtos' });
+  }
 });

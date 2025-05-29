@@ -91,14 +91,14 @@ services:
   produtos-service:
     build: ./produtos-service
     ports:
-      - "8080:8080"
+      - "3001:3000"
     environment:
       RABBITMQ_URL: amqp://rabbitmq
     depends_on:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 10s
       timeout: 5s
       retries: 5
