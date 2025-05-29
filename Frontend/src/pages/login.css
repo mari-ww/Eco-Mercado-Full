@@ -1,0 +1,35 @@
+/* src/pages/login.css */
+
+.login-container {
+    justify-content: center; /* Centraliza horizontalmente */
+    margin-top: 100px;
+    margin-bottom: 100px;
+  }
+  
+  .login-form {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 700px;
+  }
+  
+  .login-form h2 {
+    margin-bottom: 25px;
+    text-align: center;
+    color: #333;
+  }
+  
+  .form-label {
+    font-weight: 500;
+  }
+  
+  .form-control {
+    border-radius: 6px;
+  }
+  
+  button[type="submit"] {
+    margin-top: 10px;
+  }
+  
