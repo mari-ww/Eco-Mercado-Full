@@ -8,12 +8,12 @@ app.use(express.json());
 
 // Mock de produtos (conforme o frontend)
 const produtos = [
-  { id: 1, nome: "teste 1", preco: 193 },
-  { id: 2, nome: "teste 2", preco: 253 },
-  { id: 3, nome: "teste 3", preco: 89 },
-  { id: 4, nome: "Product 4", preco: 112 },
-  { id: 5, nome: "Product 5", preco: 599 },
-  { id: 6, nome: "Product 6", preco: 799 }
+  { id: 1, nome: "Escova de dentes", preco: 25 },
+  { id: 2, nome: "Ecobag", preco: 80 },
+  { id: 3, nome: "Kit Skincare", preco: 130 },
+  { id: 4, nome: "Esova de cabelo", preco: 112 },
+  { id: 5, nome: "Vasilha biodegradavel", preco: 45 },
+  { id: 6, nome: "Kit beleza", preco: 100 }
 ];
 
 // Endpoint para listar produtos

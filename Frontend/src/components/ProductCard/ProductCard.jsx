@@ -27,36 +27,30 @@ const ProductCard = ({ title, productItem }) => {
   };
 
   return (
-    <Col md={3} sm={5} xs={10} className="product mtop">
-      {/* Você pode remover ou adaptar esta parte se o campo 'discount' não existe */}
-      {title === "Big Discount" && productItem.discount ? (
-        <span className="discount">{productItem.discount}% Off</span>
-      ) : null}
-
-      {/* Imagem: se o backend não envia, usar imagem placeholder */}
+    <Col md={3} sm={5} xs={10} className="product-card mtop">
+  <div className="product-card-inner">
+    <div className="product-image">
       <img
-  loading="lazy"
+        loading="lazy"
+        src={productItem.imgUrl || banner1}
+        alt={productItem.nome}
+      />
+    </div>
+    <h3 className="product-title">{productItem.nome}</h3>
+    <div className="product-price">
+      <span>R$ {Number(productItem.preco).toFixed(2)}</span>
+      <button
+        aria-label="Adicionar"
+        type="button"
+        className="product-add"
+        onClick={() => handleAdd(productItem)}
+      >
+        <ion-icon name="add"></ion-icon>
+      </button>
+    </div>
+  </div>
+</Col>
 
-  src={productItem.imgUrl || banner1}
-  alt={productItem.nome}
-/>
-
-
-      <div className="product-details">
-        <h3 >{productItem.nome}</h3>
-        <div className="price">
-          <h4>R$ {Number(productItem.preco).toFixed(2)}</h4>
-          <button
-            aria-label="Adicionar"
-            type="button"
-            className="add"
-            onClick={() => handleAdd(productItem)}
-          >
-            <ion-icon name="add"></ion-icon>
-          </button>
-        </div>
-      </div>
-    </Col>
   );
 };
 

@@ -25,9 +25,10 @@ const Home = () => {
     <Fragment>
       <SliderHome />
 
+
       <Section
-        title="Itens"
-        bgColor="#f6f9fc"
+        title="Melhores Ofertas"
+        bgColor="rgb(244, 244, 224)"
         productItems={produtos}
       />
     </Fragment>

@@ -66,14 +66,29 @@ button {
 }
 
 /*   ---Home Slider---   */
-
 .homeSlide {
   display: flex;
   justify-content: center;
-  background-color: #f6f9fc;
-  padding-bottom: 0 !important;
+  align-items: center; 
+  background-color: #7f9669; 
+  padding: 60px 20px 80px; 
+  position: relative;
+  overflow: hidden;
+  color: #f0f0f0; 
+ 
 }
 
+.homeSlide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: 
+    repeating-radial-gradient(circle, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 6px),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 5px);
+  mix-blend-mode: screen; 
+  pointer-events: none;
+}
 /*   ---Shop Pages---   */
 
 .image-container {
@@ -229,7 +244,7 @@ button.delete {
   border: none;
   outline: none;
   background-color: transparent;
-  color: black;
+  color: rgb(0, 0, 0);
 }
 
 button.delete ion-icon {
