@@ -30,6 +30,10 @@ const LoginPage = () => {
     if (resultado.sucesso) {
       // Adiciona flag de login no localStorage
       localStorage.setItem('isLoggedIn', 'true');
+
+      // Dispara evento para atualizar componentes que ouvem mudanças
+      window.dispatchEvent(new Event('storage'));
+
       navigate("/home");
     } else {
       setErrorMsg(resultado.erro);

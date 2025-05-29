@@ -8,16 +8,33 @@ const NavBar = () => {
   const { cartList } = useSelector((state) => state.cart);
   const [expand, setExpand] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Estado local para login
   
-  // Adicione esta linha para definir isLoggedIn
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  // Verificar estado de login ao montar e quando o localStorage muda
+  useEffect(() => {
+    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    setIsLoggedIn(loggedIn);
+    
+    // Ouvir mudanças no localStorage
+    const handleStorageChange = () => {
+      const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      setIsLoggedIn(loggedIn);
+    };
 
-  // Mova handleLogout para dentro do componente
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('token');
+    setIsLoggedIn(false); // Atualiza estado local imediatamente
     window.location.href = '/login';
   };
+
   // fixed Header
   function scrollHandler() {
     if (window.scrollY >= 100) {
@@ -89,6 +106,7 @@ const NavBar = () => {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="justify-content-end flex-grow-1 pe-3">
 
+          {isLoggedIn && (
             <Nav.Item>
               <Button 
                 variant="link" 
@@ -98,6 +116,7 @@ const NavBar = () => {
                 <span className="nav-link-label">Logout</span>
               </Button>
             </Nav.Item>
+            )}
 
           {/* <Nav.Item>
             <Link
