@@ -12,6 +12,7 @@ COPY package*.json ./
 
 # Instala as dependências
 RUN npm install --production
+RUN apk add --no-cache curl
 
 # Copia o restante do código para dentro da imagem
 COPY . .

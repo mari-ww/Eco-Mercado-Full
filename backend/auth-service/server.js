@@ -30,10 +30,12 @@ const users = [
   }
 ];
 
+
+
 // Endpoint de login
 app.post('/login', (req, res) => {
-  console.log('Recebido login:', req.body); // Adicione este log
-  
+  console.log('Recebido login:', req.body); // LOG PRA DEBUG
+
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -48,7 +50,7 @@ app.post('/login', (req, res) => {
 
   const token = jwt.sign(
     { id: user.id, email: user.email },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || 'segredo',
     { expiresIn: '1h' }
   );
 
@@ -117,6 +119,17 @@ app.get('/health', (req, res) => {
   console.log('✅ Health check executado');
   res.status(200).json({ status: 'online' });
 });
+
+// Supondo que você esteja usando Express
+app.get('/test', (req, res) => {
+  res.json({ message: 'Serviço de autenticação está funcionando!' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Erro não tratado no auth-service:', err);
+  res.status(500).json({ erro: 'Erro interno no servidor' });
+});
+
 
 // Inicialização do servidor
 const PORT = process.env.PORT || 3000;

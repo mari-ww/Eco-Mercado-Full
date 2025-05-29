@@ -1,4 +1,7 @@
-FROM node:18
+FROM node:18-alpine
+
+# Instala curl (necessário para o healthcheck funcionar)
+RUN apk add --no-cache curl
 
 WORKDIR /app
 
@@ -8,4 +11,4 @@ RUN npm install
 
 COPY . .
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

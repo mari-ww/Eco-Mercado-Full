@@ -15,89 +15,70 @@ if (!AUTH_SERVICE || !PRODUTOS_SERVICE || !CARRINHO_SERVICE || !PEDIDOS_SERVICE 
   process.exit(1);
 }
 
+fastify.log.info('🔍 AUTH_SERVICE = ' + AUTH_SERVICE);
+
 fastify.register(cors, {
-  origin: '* ', // ou '*' para liberar tudo em dev
+  origin: '*', // Permitir tudo em dev, ajuste em produção
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 });
 
+// Rotas públicas do auth que NÃO precisam de token
+const rotasPublicasAuth = [
+  '/auth/login',
+  '/auth/test',
+  '/auth/health',
+];
 
-// Middleware de autenticação
+// Middleware de autenticação para o gateway
 fastify.addHook('onRequest', async (request, reply) => {
-  if (request.method === 'POST' && request.url === '/auth/login') return;
+  // Ignorar rotas públicas do serviço de autenticação
+  if (rotasPublicasAuth.includes(request.url)) {
+    return;
+  }
 
-  
   const token = request.headers['authorization'];
   if (!token) {
     return reply.code(401).send({ error: 'Token não fornecido' });
   }
+
+  // Aqui você poderia validar o token se quiser, ou apenas repassar
+  // Para deixar a verificação para o serviço de auth, só garante que tenha o token
 });
 
+// Função genérica para chamar os serviços com circuit breaker
+const callServiceWithBreaker = (urlBase, breaker) => async (path = '', headers = {}, method = 'GET', data = null) => {
+  const url = `${urlBase}${path || ''}`;
+  fastify.log.info(`➡️ Chamando ${url} com método ${method}`);
 
-// Adicionando auth_service
-const authService = async ({ method = 'GET', path = '', headers = {}, data = {} }) => {
-  const url = `${AUTH_SERVICE}${path || '/auth'}`;
-  fastify.log.info(`➡️ AUTH URL ${method} ${url}`);
-  const response = await axios({ method, url, headers, data });
+  const options = {
+    method,
+    url,
+    headers,
+    data,
+  };
+  const response = await axios(options);
   return response.data;
 };
+
+// Setup circuit breakers para cada serviço
+const authService = callServiceWithBreaker(AUTH_SERVICE, null); // breaker não usado aqui diretamente, criaremos abaixo
 const authBreaker = new CircuitBreaker(authService, {
-  timeout: 3000,
+  timeout: 10000,
   errorThresholdPercentage: 50,
   resetTimeout: 10000,
 });
-authBreaker.fallback(() => ({ error: 'Serviço de auth indisponível' }));
+authBreaker.fallback((error) => {
+  console.error('⚠️ Circuit breaker fallback acionado!');
+  console.error('Detalhes do erro:', error.message || error);
 
-
-fastify.get('/auth', async (request, reply) => {
-  try {
-    const data = await authBreaker.fire({
-      method: 'GET',
-      path: '',
-      headers: request.headers
-    });
-    reply.send(data);
-  } catch (err) {
-    reply.code(503).send({ error: 'Erro ao acessar /auth', details: err.message });
-  }
+  return {
+    error: 'Serviço de auth indisponível',
+    details: error.message || 'Erro desconhecido no fallback'
+  };
 });
 
-fastify.get('/auth*', async (request, reply) => {
-  try {
-    const path = request.url.replace('/auth', '');
-    const data = await authBreaker.fire({
-      method: 'GET',
-      path,
-      headers: request.headers
-    });
-    reply.send(data);
-  } catch (err) {
-    reply.code(503).send({ error: 'Erro ao acessar o serviço auth! LASCOU DOIDO', details: err.message });
-  }
-});
-fastify.post('/auth*', async (request, reply) => {
-  try {
-    const path = request.url.replace('/auth', '');
-    const data = await authBreaker.fire({
-      method: 'POST',
-      path,
-      headers: request.headers,
-      data: request.body
-    });
-    reply.send(data);
-  } catch (err) {
-    reply.code(503).send({ error: 'Erro ao acessar o serviço auth (POST)', details: err.message });
-  }
-});
-
-
-// produtos_service
-const produtosService = async (path = '', headers) => {
-  const url = `${PRODUTOS_SERVICE}${path || '/produtos'}`
-  fastify.log.info('➡️ PRODUTOS URL ' + url)
-  const response = await axios.get(url, { headers });
-  return response.data;
-}
+const produtosService = callServiceWithBreaker(PRODUTOS_SERVICE);
 const produtosBreaker = new CircuitBreaker(produtosService, {
   timeout: 3000,
   errorThresholdPercentage: 50,
@@ -105,6 +86,64 @@ const produtosBreaker = new CircuitBreaker(produtosService, {
 });
 produtosBreaker.fallback(() => ({ error: 'Serviço de produtos indisponível' }));
 
+const carrinhoService = callServiceWithBreaker(CARRINHO_SERVICE);
+const carrinhoBreaker = new CircuitBreaker(carrinhoService, {
+  timeout: 3000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 10000,
+});
+carrinhoBreaker.fallback(() => ({ error: 'Serviço de carrinho indisponível' }));
+
+const pedidosService = callServiceWithBreaker(PEDIDOS_SERVICE);
+const pedidosBreaker = new CircuitBreaker(pedidosService, {
+  timeout: 3000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 10000,
+});
+pedidosBreaker.fallback(() => ({ error: 'Serviço de pedidos indisponível' }));
+
+// Rotas para o serviço de auth
+
+fastify.get('/auth', async (request, reply) => {
+  try {
+    const data = await authBreaker.fire('', request.headers);
+    reply.send(data);
+  } catch (err) {
+    fastify.log.error('❌ Erro no GET /auth:', err);
+    reply.code(503).send({ error: 'Erro ao acessar o serviço auth (GET)', details: err.message });
+  }
+});
+
+// /auth* GET
+fastify.get('/auth*', async (request, reply) => {
+  try {
+    const path = request.url.replace('/auth', '') || '/';
+    const data = await authBreaker.fire(path, request.headers);
+    reply.send(data);
+  } catch (err) {
+    reply.code(503).send({ error: 'Erro ao acessar o serviço auth (GET *)', details: err.message });
+  }
+});
+
+// /auth* POST
+// Rota de login
+fastify.post('/auth/login', async (request, reply) => {
+  try {
+    const { body } = request; // ✅ Fastify já faz o parsing do body
+    console.log('➡️ Redirecionando para o auth-service com body:', body);
+
+    const response = await axios.post('http://auth-service:3000/login', body);
+    reply.send(response.data);
+  } catch (error) {
+    console.error('❌ Erro no proxy para o auth-service:', error.message);
+    reply.status(503).send({
+      error: 'Serviço de auth indisponível',
+      details: error.message,
+    });
+  }
+});
+
+// Rotas para produtos
 fastify.get('/produtos', async (request, reply) => {
   try {
     const data = await produtosBreaker.fire('', request.headers);
@@ -116,29 +155,15 @@ fastify.get('/produtos', async (request, reply) => {
 
 fastify.get('/produtos*', async (request, reply) => {
   try {
-    const path = request.raw.url.replace('/produtos', '');
+    const path = request.url.replace('/produtos', '') || '/';
     const data = await produtosBreaker.fire(path, request.headers);
     reply.send(data);
   } catch (err) {
-    reply.code(503).send({ error: 'Erro ao acessar o serviço produtos', details: err.message });
+    reply.code(503).send({ error: 'Erro no serviço de produtos' });
   }
 });
 
-
-// carrinho_service
-const carrinhoService = async (path = '', headers) => {
-  const url = `${CARRINHO_SERVICE}${path || '/carrinho'}`
-  fastify.log.info('➡️ CARRINHO URL ' + url)
-  const response = await axios.get(url, { headers });
-  return response.data;
-}
-const carrinhoBreaker = new CircuitBreaker(carrinhoService, {
-  timeout: 3000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-});
-carrinhoBreaker.fallback(() => ({ error: 'Serviço de carrinho indisponível' }));
-
+// Rotas para carrinho
 fastify.get('/carrinho', async (request, reply) => {
   try {
     const data = await carrinhoBreaker.fire('', request.headers);
@@ -150,7 +175,7 @@ fastify.get('/carrinho', async (request, reply) => {
 
 fastify.get('/carrinho*', async (request, reply) => {
   try {
-    const path = request.raw.url.replace('/carrinho', '');
+    const path = request.url.replace('/carrinho', '') || '/';
     const data = await carrinhoBreaker.fire(path, request.headers);
     reply.send(data);
   } catch (err) {
@@ -158,21 +183,7 @@ fastify.get('/carrinho*', async (request, reply) => {
   }
 });
 
-
-// pedidos_service
-const pedidosService = async (path = '', headers) => {
-  const url = `${PEDIDOS_SERVICE}${path || '/pedidos'}`
-  fastify.log.info('➡️ PEDIDOS URL ' + url)
-  const response = await axios.get(url, { headers });
-  return response.data;
-}
-const pedidosBreaker = new CircuitBreaker(pedidosService, {
-  timeout: 3000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-});
-pedidosBreaker.fallback(() => ({ error: 'Serviço de pedidos indisponível' }));
-
+// Rotas para pedidos
 fastify.get('/pedidos', async (request, reply) => {
   try {
     const data = await pedidosBreaker.fire('', request.headers);
@@ -184,7 +195,7 @@ fastify.get('/pedidos', async (request, reply) => {
 
 fastify.get('/pedidos*', async (request, reply) => {
   try {
-    const path = request.raw.url.replace('/pedidos', '');
+    const path = request.url.replace('/pedidos', '') || '/';
     const data = await pedidosBreaker.fire(path, request.headers);
     reply.send(data);
   } catch (err) {
@@ -192,22 +203,10 @@ fastify.get('/pedidos*', async (request, reply) => {
   }
 });
 
-
-fastify.listen({ port: PORT , host: '0.0.0.0' }, (err, address) => {
+fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
   if (err) {
     fastify.log.error(err);
     process.exit(1);
   }
   fastify.log.info(`🚀 Gateway rodando em ${address}`);
-});
-
-// Adicionar após as outras rotas de produtos:
-fastify.get('/produtos*', async (request, reply) => {
-  try {
-    const path = request.url.replace('/produtos', '');
-    const data = await produtosBreaker.fire(path, request.headers);
-    reply.send(data);
-  } catch (err) {
-    reply.code(503).send({ error: 'Erro no serviço de produtos' });
-  }
 });
