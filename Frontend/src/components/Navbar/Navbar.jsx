@@ -1,12 +1,23 @@
 import { useEffect, useState } from "react";
-import { Container, Nav, Navbar } from "react-bootstrap";
+import { Container, Nav, Navbar, Button } from "react-bootstrap"; // Adicione Button aqui
 import "./navbar.css";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
+
 const NavBar = () => {
   const { cartList } = useSelector((state) => state.cart);
   const [expand, setExpand] = useState(false);
   const [isFixed, setIsFixed] = useState(false);
+  
+  // Adicione esta linha para definir isLoggedIn
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+  // Mova handleLogout para dentro do componente
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  };
   // fixed Header
   function scrollHandler() {
     if (window.scrollY >= 100) {
@@ -76,11 +87,19 @@ const NavBar = () => {
           </Navbar.Toggle>
         </div>
         <Navbar.Collapse id="basic-navbar-nav">
-
-          
           <Nav className="justify-content-end flex-grow-1 pe-3">
 
-          <Nav.Item>
+            <Nav.Item>
+              <Button 
+                variant="link" 
+                className="navbar-link"
+                onClick={handleLogout}
+              >
+                <span className="nav-link-label">Logout</span>
+              </Button>
+            </Nav.Item>
+
+          {/* <Nav.Item>
             <Link
               aria-label="Go to Login Page"
               className="navbar-link"
@@ -89,7 +108,7 @@ const NavBar = () => {
             >
               <span className="nav-link-label">Login</span>
             </Link>
-          </Nav.Item>
+          </Nav.Item> */}
 
 
             <Nav.Item>

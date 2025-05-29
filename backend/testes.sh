@@ -196,7 +196,7 @@ ver_metricas() {
 
 mostrar_urls() {
   echo "- Prometheus: http://localhost:9090"
-  echo "- Grafana:    http://localhost:3000 (admin/admin)"
+  echo "- Grafana:    http://localhost:4000 (admin/admin)"
   echo
 }
 

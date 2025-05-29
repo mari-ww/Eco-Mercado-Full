@@ -26,12 +26,14 @@ const users = [
   { 
     id: "123", 
     email: "user@teste.com", 
-    password: bcrypt.hashSync("senha123", 8)
+    password: bcrypt.hashSync("senha123", 8) // Mantenha igual
   }
 ];
 
 // Endpoint de login
 app.post('/login', (req, res) => {
+  console.log('Recebido login:', req.body); // Adicione este log
+  
   const { email, password } = req.body;
 
   if (!email || !password) {

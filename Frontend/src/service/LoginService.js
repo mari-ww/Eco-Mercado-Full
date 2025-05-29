@@ -4,7 +4,7 @@ const login = async (email, senha, baseUrl) => {
   try {
     const response = await axios.post(`${baseUrl}/login`, {
       email,
-      senha
+      password: senha
     });
 
     const { token } = response.data;

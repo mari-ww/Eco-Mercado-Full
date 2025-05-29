@@ -1,6 +1,7 @@
+// App.js
 import { lazy, Suspense } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import NavBar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
 import Loader from "./components/Loader/Loader";
@@ -33,16 +34,17 @@ function App() {
         />
         <NavBar />
         <Routes>
-          <Route path="/" element={<Home />} />
-       
+          {/* Redireciona a raiz para o login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          
+          <Route path="/home" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/pedido-status" element={<OrderStatus />} />
           <Route path="/meus-pedidos" element={<MeusPedidos />} />
-          <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
-
-
         </Routes>
         <Footer />
       </Router>

@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Corrigido aqui
 import { Form, Button, Container, Row, Col, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import LoginService from '../service/LoginService';  // <- aqui o import
@@ -13,6 +13,14 @@ const LoginPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
+    // Redireciona se já estiver logado
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    if (isLoggedIn) {
+      navigate('/home');
+    }
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -20,7 +28,9 @@ const LoginPage = () => {
     const resultado = await LoginService.login(email, password, BACKEND_URL);
 
     if (resultado.sucesso) {
-      navigate("/dashboard");
+      // Adiciona flag de login no localStorage
+      localStorage.setItem('isLoggedIn', 'true');
+      navigate("/home");
     } else {
       setErrorMsg(resultado.erro);
     }
