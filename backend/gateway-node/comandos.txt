@@ -1,0 +1,13 @@
+C:\Users\Aragão Neto>curl -X POST http://localhost:8081/auth/login -H "Content-Type: application/json" -d "{\"email\": \"user@teste.com\", \"password\": \"senha123\"}"    
+==> gera o token
+-{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsImVtYWlsIjoidXNlckB0ZXN0ZS5jb20iLCJpYXQiOjE3NDg1ODMxNTAsImV4cCI6MTc0ODU4Njc1MH0.VYg_N_MxsRPuqKnVCmMeoY-B-Jo06GbDZwFDpwjg-wc"}-
+
+=================================================
+
+ curl -X GET http://localhost:8081/auth/validate -H "Authorization: Bearer <token_aqui>"
+==================================================
+curl -X GET http://localhost:8081/produtos -H "Authorization: Bearer <token_aqui>"
+==> vai entregar os produtos!
+
+-C:\Users\Aragão Neto>curl -X GET http://localhost:8081/produtos -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsImVtYWlsIjoidXNlckB0ZXN0ZS5jb20iLCJpYXQiOjE3NDg1ODMxNTAsImV4cCI6MTc0ODU4Njc1MH0.VYg_N_MxsRPuqKnVCmMeoY-B-Jo06GbDZwFDpwjg-wc"
+[{"id":1,"nome":"Escova de dentes","preco":25},{"id":2,"nome":"Ecobag","preco":80},{"id":3,"nome":"Kit Skincare","preco":130},{"id":4,"nome":"Esova de cabelo","preco":112},{"id":5,"nome":"Vasilha biodegradavel","preco":45},{"id":6,"nome":"Kit beleza","preco":100}]-
