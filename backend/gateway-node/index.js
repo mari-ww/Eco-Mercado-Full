@@ -1,38 +1,34 @@
 require('dotenv').config();
 const fastify = require('fastify')({ logger: true });
-const axios = require('axios');
+const { request } = require('undici');
 const CircuitBreaker = require('opossum');
-const cors = require('@fastify/cors')
+const cors = require('@fastify/cors');
 
-const AUTH_SERVICE = process.env.AUTH_SERVICE?.trim()
-const PRODUTOS_SERVICE = process.env.PRODUTOS_SERVICE?.trim()
-const CARRINHO_SERVICE = process.env.CARRINHO_SERVICE?.trim()
-const PEDIDOS_SERVICE = process.env.PEDIDOS_SERVICE?.trim()
-const PORT = process.env.PORT?.trim()
+const AUTH_SERVICE = process.env.AUTH_SERVICE?.replace(/[^\x20-\x7E]/g, '').trim();
+const PRODUTOS_SERVICE = process.env.PRODUTOS_SERVICE?.trim();
+const CARRINHO_SERVICE = process.env.CARRINHO_SERVICE?.trim();
+const PEDIDOS_SERVICE = process.env.PEDIDOS_SERVICE?.trim();
+const PORT = process.env.PORT?.trim();
 
 if (!AUTH_SERVICE || !PRODUTOS_SERVICE || !CARRINHO_SERVICE || !PEDIDOS_SERVICE || !PORT) {
   console.error('❌ Variáveis de ambiente faltando!');
   process.exit(1);
 }
 
-fastify.log.info('🔍 AUTH_SERVICE = ' + AUTH_SERVICE);
-
 fastify.register(cors, {
-  origin: '*', // Permitir tudo em dev, ajuste em produção
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 });
 
-// Rotas públicas do auth que NÃO precisam de token
 const rotasPublicasAuth = [
   '/auth/login',
   '/auth/test',
+  '/health',
   '/auth/health',
 ];
 
-// Middleware de autenticação para o gateway
 fastify.addHook('onRequest', async (request, reply) => {
-  // Ignorar rotas públicas do serviço de autenticação
   if (rotasPublicasAuth.includes(request.url)) {
     return;
   }
@@ -41,80 +37,101 @@ fastify.addHook('onRequest', async (request, reply) => {
   if (!token) {
     return reply.code(401).send({ error: 'Token não fornecido' });
   }
-
-  // Aqui você poderia validar o token se quiser, ou apenas repassar
-  // Para deixar a verificação para o serviço de auth, só garante que tenha o token
 });
 
-// Função genérica para chamar os serviços com circuit breaker
-const callServiceWithBreaker = (urlBase, breaker) => async (path = '', headers = {}, method = 'GET', data = null) => {
-  const url = `${urlBase}${path || ''}`;
-  fastify.log.info(`➡️ Chamando ${url} com método ${method}`);
 
+async function callService(baseURL, path = '', method = 'GET', headers = {}, data = null) {
+  const url = `${baseURL}${path || ''}`;
   const options = {
     method,
-    url,
-    headers,
-    data,
+    headers: { ...headers },
   };
-  const response = await axios(options);
-  return response.data;
-};
 
-// Setup circuit breakers para cada serviço
-const authService = callServiceWithBreaker(AUTH_SERVICE, null); // breaker não usado aqui diretamente, criaremos abaixo
-const authBreaker = new CircuitBreaker(authService, {
-  timeout: 10000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-});
-authBreaker.fallback((error) => {
-  console.error('⚠️ Circuit breaker fallback acionado!');
-  console.error('Detalhes do erro:', error.message || error);
+  if (data && ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
+    const bodyString = JSON.stringify(data);
+    options.body = bodyString;
 
-  return {
-    error: 'Serviço de auth indisponível',
-    details: error.message || 'Erro desconhecido no fallback'
+    options.headers['content-type'] = 'application/json';
+    // NÃO DEFINA content-length manualmente!
+    // undici cuida disso automaticamente
+  }
+
+  const { body, statusCode } = await request(url, options);
+  const responseText = await body.text();
+
+  if (statusCode >= 400) {
+    throw new Error(`Erro ${statusCode}: ${responseText}`);
+  }
+
+  try {
+    return JSON.parse(responseText);
+  } catch (e) {
+    return { raw: responseText };
+  }
+}
+
+
+function createServiceBreaker(baseURL, fallbackMessage) {
+  const serviceFn = async (path, headers = {}, method = 'GET', data = null) => {
+    fastify.log.info({
+      message: '⚙️ Params recebidos pelo breaker',
+      path,
+      method,
+      headers,
+      data
+    });
+
+    const url = `${baseURL}${path || ''}`;
+    fastify.log.info(`➡️ Chamando ${url} com método ${method}`);
+
+    return await callService(baseURL, path, method, headers, data);
   };
+
+  const breaker = new CircuitBreaker(serviceFn, {
+    timeout: 5000,
+    errorThresholdPercentage: 50,
+    resetTimeout: 10000,
+  });
+
+  breaker.fallback((error) => {
+    fastify.log.warn(`🔌 Fallback ativado: ${fallbackMessage} - ${error?.message}`);
+    return {
+      error: fallbackMessage,
+      details: error?.message || 'Erro desconhecido',
+    };
+  });
+
+  return breaker;
+}
+
+// Criar breakers para todos os serviços
+const authBreaker = createServiceBreaker(AUTH_SERVICE, 'Serviço de auth indisponível');
+const produtosBreaker = createServiceBreaker(PRODUTOS_SERVICE, 'Serviço de produtos indisponível');
+const carrinhoBreaker = createServiceBreaker(CARRINHO_SERVICE, 'Serviço de carrinho indisponível');
+const pedidosBreaker = createServiceBreaker(PEDIDOS_SERVICE, 'Serviço de pedidos indisponível');
+
+// Rotas de Auth
+fastify.get('/health', async (request, reply) => {
+  reply.send({ status: 'ok' });
 });
 
-const produtosService = callServiceWithBreaker(PRODUTOS_SERVICE);
-const produtosBreaker = new CircuitBreaker(produtosService, {
-  timeout: 3000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-});
-produtosBreaker.fallback(() => ({ error: 'Serviço de produtos indisponível' }));
 
-const carrinhoService = callServiceWithBreaker(CARRINHO_SERVICE);
-const carrinhoBreaker = new CircuitBreaker(carrinhoService, {
-  timeout: 3000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-});
-carrinhoBreaker.fallback(() => ({ error: 'Serviço de carrinho indisponível' }));
-
-const pedidosService = callServiceWithBreaker(PEDIDOS_SERVICE);
-const pedidosBreaker = new CircuitBreaker(pedidosService, {
-  timeout: 3000,
-  errorThresholdPercentage: 50,
-  resetTimeout: 10000,
-});
-pedidosBreaker.fallback(() => ({ error: 'Serviço de pedidos indisponível' }));
-
-// Rotas para o serviço de auth
 
 fastify.get('/auth', async (request, reply) => {
   try {
-    const data = await authBreaker.fire('', request.headers);
+    const data = await authBreaker.fire({
+  path: '/login',
+  headers: request.headers,
+  method: 'POST',
+  data: request.body
+});
+
     reply.send(data);
   } catch (err) {
-    fastify.log.error('❌ Erro no GET /auth:', err);
     reply.code(503).send({ error: 'Erro ao acessar o serviço auth (GET)', details: err.message });
   }
 });
 
-// /auth* GET
 fastify.get('/auth*', async (request, reply) => {
   try {
     const path = request.url.replace('/auth', '') || '/';
@@ -125,21 +142,19 @@ fastify.get('/auth*', async (request, reply) => {
   }
 });
 
-// /auth* POST
-// Rota de login
 fastify.post('/auth/login', async (request, reply) => {
+  
+  fastify.log.info({ body: request.body });
   try {
-    const { body } = request; // ✅ Fastify já faz o parsing do body
-    console.log('➡️ Redirecionando para o auth-service com body:', body);
-
-    const response = await axios.post('http://auth-service:3000/login', body);
-    reply.send(response.data);
-  } catch (error) {
-    console.error('❌ Erro no proxy para o auth-service:', error.message);
-    reply.status(503).send({
-      error: 'Serviço de auth indisponível',
-      details: error.message,
-    });
+    const response = await authBreaker.fire('/login', {
+      'Content-Type': 'application/json',
+    }, 'POST', 
+      request.body
+    );
+    // http://auth-service:3000/login
+    reply.send(response);
+  } catch (err) {
+    reply.code(503).send({ error: 'Erro ao acessar o serviço auth (POST /login)', details: err.message });
   }
 });
 
@@ -159,7 +174,7 @@ fastify.get('/produtos*', async (request, reply) => {
     const data = await produtosBreaker.fire(path, request.headers);
     reply.send(data);
   } catch (err) {
-    reply.code(503).send({ error: 'Erro no serviço de produtos' });
+    reply.code(503).send({ error: 'Erro no serviço de produtos', details: err.message });
   }
 });
 
