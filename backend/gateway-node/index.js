@@ -158,20 +158,33 @@ fastify.post('/auth/login', async (request, reply) => {
   }
 });
 
-// Rotas para produtos
 fastify.get('/produtos', async (request, reply) => {
   try {
-    const data = await produtosBreaker.fire('', request.headers);
+    // Chamar /produtos no serviço produtos
+    const data = await produtosBreaker.fire('/produtos', request.headers);
     reply.send(data);
   } catch (err) {
     reply.code(503).send({ error: 'Erro ao acessar /produtos', details: err.message });
   }
 });
 
+// fastify.get('/produtos*', async (request, reply) => {
+//   try {
+//     let path = request.url.replace('/produtos', '');
+//     if (!path) path = '/produtos'; // Garantir path válido
+
+//     const data = await produtosBreaker.fire(path, request.headers);
+//     reply.send(data);
+//   } catch (err) {
+//     reply.code(503).send({ error: 'Erro no serviço de produtos', details: err.message });
+//   }
+// });
+
 fastify.get('/produtos*', async (request, reply) => {
   try {
-    const path = request.url.replace('/produtos', '') || '/';
+    const path = request.url.replace('/produtos', '') || '/    produtos';
     const data = await produtosBreaker.fire(path, request.headers);
+
     reply.send(data);
   } catch (err) {
     reply.code(503).send({ error: 'Erro no serviço de produtos', details: err.message });
