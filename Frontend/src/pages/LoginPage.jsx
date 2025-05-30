@@ -1,7 +1,7 @@
 // src/pages/LoginPage.jsx
 import React, { useState, useEffect } from "react"; // Corrigido aqui
 import { Form, Button, Container, Row, Col, Alert } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link  } from "react-router-dom";
 import LoginService from '../service/LoginService';  // <- aqui o import
 import "./login.css";
 
@@ -73,6 +73,11 @@ const LoginPage = () => {
               <Button variant="primary" type="submit" className="w-100">
                 Entrar
               </Button>
+
+              {/* Adicione este bloco AQUI - depois do botão de login */}
+              <div className="text-center mt-3">
+                <Link to="/register">Não tem conta? Registre-se</Link>
+              </div>
             </Form>
           </div>
         </Col>

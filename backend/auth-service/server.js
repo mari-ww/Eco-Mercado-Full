@@ -30,7 +30,43 @@ const users = [
   }
 ];
 
+// Endpoint de registro
+app.post('/register', async (req, res) => {
+  const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ erro: 'Email e senha são obrigatórios!' });
+  }
+
+  // Verifica se o usuário já existe
+  const userExists = users.some(u => u.email === email);
+  if (userExists) {
+    return res.status(409).json({ erro: 'Email já cadastrado!' });
+  }
+
+  try {
+    // Criptografa a senha
+    const hashedPassword = bcrypt.hashSync(password, 8);
+    
+    // Cria novo usuário
+    const newUser = {
+      id: Date.now().toString(), // ID simples
+      email,
+      password: hashedPassword
+    };
+
+    users.push(newUser);
+    console.log('Novo usuário registrado:', newUser.email);
+
+    res.status(201).json({ 
+      mensagem: 'Usuário registrado com sucesso!',
+      id: newUser.id
+    });
+  } catch (err) {
+    console.error('Erro ao registrar:', err);
+    res.status(500).json({ erro: 'Erro interno no servidor' });
+  }
+});
 
 // Endpoint de login
 app.post('/login', (req, res) => {

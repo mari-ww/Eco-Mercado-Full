@@ -142,6 +142,22 @@ fastify.get('/auth*', async (request, reply) => {
   }
 });
 
+fastify.post('/auth/register', async (request, reply) => {
+  try {
+    const response = await authBreaker.fire('/register', {
+      'Content-Type': 'application/json',
+    }, 'POST', 
+      request.body
+    );
+    reply.send(response);
+  } catch (err) {
+    reply.code(503).send({ 
+      error: 'Erro ao registrar usuário', 
+      details: err.message 
+    });
+  }
+});
+
 fastify.post('/auth/login', async (request, reply) => {
   
   fastify.log.info({ body: request.body });
