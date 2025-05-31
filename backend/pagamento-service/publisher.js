@@ -1,28 +1,24 @@
 const amqp = require('amqplib');
 
-async function publicar() {
-  try {
-    const conexao = await amqp.connect('amqp://localhost');
-    const canal = await conexao.createChannel();
+async function publicarPagamento(pagamento) {
+    try {
+        const connection = await amqp.connect('amqp://localhost');
+        const channel = await connection.createChannel();
+        const queue = 'pagamentos';
 
-    const fila = 'pagamento';
+        await channel.assertQueue(queue, { durable: false });
+        channel.sendToQueue(queue, Buffer.from(JSON.stringify(pagamento)));
 
-    await canal.assertQueue(fila, { durable: true });
+        console.log('Mensagem de pagamento enviada:', pagamento);
 
-    const mensagem = {
-      pedidoId: 123,
-      valor: 150,
-      status: 'pendente',
-    };
+        await channel.close();
+        await connection.close();
 
-    canal.sendToQueue(fila, Buffer.from(JSON.stringify(mensagem)), { persistent: true });
-    console.log('Mensagem de pagamento enviada:', mensagem);
-
-    await canal.close();
-    await conexao.close();
-  } catch (error) {
-    console.error('Erro no publisher:', error);
-  }
+        return { message: 'Pagamento enviado para processamento!' }; // Retorno de sucesso
+    } catch (error) {
+        console.error('Erro ao publicar pagamento:', error);
+        throw error; // Propaga o erro para o server.js
+    }
 }
 
-publicar();
+module.exports = { publicarPagamento };

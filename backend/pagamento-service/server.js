@@ -1,8 +1,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors'); // Importa o cors
 const { publicarPagamento } = require('./publisher'); // Importa a função do publisher.js
 
 const app = express();
+
+// Habilitar CORS para permitir chamadas do frontend (localhost:3000)
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+
 app.use(bodyParser.json());
 
 // Rota para receber o pedido do frontend
@@ -18,7 +27,6 @@ app.post('/api/pagamento', async (req, res) => {
 });
 
 // Inicia o servidor
-app.listen(3001, () => {
-    console.log('Servidor do pagamento rodando na porta 3001');
+app.listen(4001, () => {
+    console.log('Servidor do pagamento rodando na porta 4001');
 });
-

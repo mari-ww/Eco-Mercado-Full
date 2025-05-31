@@ -7,8 +7,7 @@ import {
   deleteProduct,
   clearCart,
 } from "../app/features/cart/cartSlice";
-import API_BASES from "../apiConfig";
-import axios from "axios";
+import { criarPagamento } from "../service/PagamentoService"; // Corrigido import
 import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
@@ -26,10 +25,10 @@ const Cart = () => {
 
   const navigate = useNavigate();
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     const fakeOrderId = `ORDER-${Math.floor(Math.random() * 100000)}`;
     const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-  
+
     const newOrder = {
       id: fakeOrderId,
       products: cartList.map((item) => ({
@@ -38,13 +37,31 @@ const Cart = () => {
       })),
       total: totalPrice,
     };
+
+    try {
+      // Chamada ao backend com await
+      const response = await criarPagamento({
+        pedidoId: fakeOrderId,
+        valor: totalPrice,
+        status: "pendente",
+      });
+
+      alert(response.message || "Pagamento enviado com sucesso!");
+
+      // Salvar pedido localmente e redirecionar
       localStorage.setItem("orders", JSON.stringify([...savedOrders, newOrder]));
-    alert("Compra registrada com sucesso!");
-  
-    dispatch(clearCart());
-    navigate("/pedido-status", { state: { orderId: fakeOrderId } });
+      dispatch(clearCart());
+      navigate("/pedido-status", { state: { orderId: fakeOrderId } });
+    } catch (error) {
+      console.error("Erro ao processar pagamento:", error);
+      if (error.response) {
+        alert(`Erro: ${error.response.data.error || 'Erro ao processar pagamento. Tente novamente.'}`);
+      } else {
+        alert("Erro de rede ou backend indisponível.");
+      }
+    }
   };
-  
+
   return (
     <section className="cart-items">
       <Container>
