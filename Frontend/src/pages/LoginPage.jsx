@@ -4,6 +4,8 @@ import { Form, Button, Container, Row, Col, Alert } from "react-bootstrap";
 import { useNavigate, Link  } from "react-router-dom";
 import LoginService from '../service/LoginService';  // <- aqui o import
 import "./login.css";
+import Swal from 'sweetalert2';
+
 
 const BACKEND_URL = "http://localhost:3004" // ou outra URL do seu backend
 
@@ -24,17 +26,21 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
-
+  
     const resultado = await LoginService.login(email, password, BACKEND_URL);
-
+  
     if (resultado.sucesso) {
-      // Adiciona flag de login no localStorage
       localStorage.setItem('isLoggedIn', 'true');
-
-      // Dispara evento para atualizar componentes que ouvem mudanças
       window.dispatchEvent(new Event('storage'));
-
-      navigate("/home");
+        Swal.fire({
+        title: 'Login realizado!',
+        text: `Bem-vindo, ${email}!`,
+        icon: 'success',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        navigate("/home");
+      });
+  
     } else {
       setErrorMsg(resultado.erro);
     }
@@ -74,7 +80,6 @@ const LoginPage = () => {
                 Entrar
               </Button>
 
-              {/* Adicione este bloco AQUI - depois do botão de login */}
               <div className="text-center mt-3">
                 <Link to="/register">Não tem conta? Registre-se</Link>
               </div>
