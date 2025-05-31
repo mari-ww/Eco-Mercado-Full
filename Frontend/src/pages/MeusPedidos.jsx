@@ -47,27 +47,28 @@ const MeusPedidos = () => {
           orders.map((order, index) => (
             <div className="pedido mb-5" key={index}>
               <h5>ID do Pedido: {order.id}</h5>
-              {order.products.map((product) => (
-                <Row
-                  key={product.id}
-                  className="align-items-center border-bottom py-3"
-                >
-                  <Col md={2}>
-                    <img
-                      src={product.imgUrl}
-                      alt={product.productName}
-                      className="img-fluid"
-                    />
-                  </Col>
-                  <Col md={6}>
-                    <h6>{product.productName}</h6>
-                    <p className="mb-0">ID do Produto: {product.id}</p>
-                  </Col>
-                  <Col md={4}>
-                    <p>Status de entrega: <strong>{product.status}</strong></p>
-                  </Col>
-                </Row>
-              ))}
+              {order.products.map((product) => {
+  console.log(product);
+  return (
+    <Row key={product.id} className="align-items-center border-bottom py-3">
+      <Col md={2}>
+        <img
+          src={product.imagem ? `http://localhost:3001/img/${product.imagem}` : '/default-img.png'}
+          alt={product.nome}
+          className="img-fluid"
+        />
+      </Col>
+      <Col md={6}>
+        <h6>{product.nome}</h6>
+        <p className="mb-0">ID do Produto: {product.id}</p>
+      </Col>
+      <Col md={4}>
+        <p>Status de entrega: <strong>{product.status}</strong></p>
+      </Col>
+    </Row>
+  );
+})}
+
             </div>
           ))
         )}

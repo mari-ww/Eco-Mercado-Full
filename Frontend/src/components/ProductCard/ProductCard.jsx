@@ -25,16 +25,21 @@ const ProductCard = ({ title, productItem }) => {
       toast.success("Produto adicionado ao carrinho!");
     }
   };
+  console.log('Imagem:', productItem.imagem);
+  console.log('URL da imagem:', productItem.imagem ? `http://localhost:3001/img/${productItem.imagem}` : 'usando banner');
+  const imagePath = productItem.imagem ? productItem.imagem.replace(/^\/img\//, '') : null;
 
   return (
     <Col md={3} sm={5} xs={10} className="product-card mtop">
   <div className="product-card-inner">
     <div className="product-image">
-      <img
-        loading="lazy"
-        src={productItem.imgUrl || banner1}
-        alt={productItem.nome}
-      />
+   <img
+  loading="lazy"
+  src={imagePath ? `http://localhost:3001/img/${imagePath}` : banner1}
+  alt={productItem.nome}
+/>
+
+
     </div>
     <h3 className="product-title">{productItem.nome}</h3>
     <div className="product-price">

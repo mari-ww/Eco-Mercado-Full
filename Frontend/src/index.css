@@ -173,11 +173,13 @@ button {
   width: fit-content;
 }
 
-.cart-items h4 span {
-  color: #0f3460;
-  margin-left: 20px;
-  font-weight: 500;
+.cart-items {
+  background: #f6f9fc;
+  min-height: calc(100vh - 200px); 
+  padding-top: 50px;
+  padding-bottom: 50px;
 }
+
 
 .removeCart {
   background: none;

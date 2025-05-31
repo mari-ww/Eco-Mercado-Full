@@ -44,7 +44,6 @@ function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/pedido-status" element={<OrderStatus />} />
           <Route path="/meus-pedidos" element={<MeusPedidos />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>

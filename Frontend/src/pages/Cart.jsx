@@ -9,6 +9,8 @@ import {
 } from "../app/features/cart/cartSlice";
 import { criarPagamento } from "../service/PagamentoService"; // Corrigido import
 import { useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
+
 
 const Cart = () => {
   const { cartList } = useSelector((state) => state.cart);
@@ -28,7 +30,7 @@ const Cart = () => {
   const handlePurchase = async () => {
     const fakeOrderId = `ORDER-${Math.floor(Math.random() * 100000)}`;
     const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-
+  
     const newOrder = {
       id: fakeOrderId,
       products: cartList.map((item) => ({
@@ -37,31 +39,36 @@ const Cart = () => {
       })),
       total: totalPrice,
     };
-
+  
     try {
-      // Chamada ao backend com await
       const response = await criarPagamento({
         pedidoId: fakeOrderId,
         valor: totalPrice,
         status: "pendente",
       });
-
-      alert(response.message || "Pagamento enviado com sucesso!");
-
-      // Salvar pedido localmente e redirecionar
+  
+      // SweetAlert de sucesso
+      await Swal.fire({
+        title: 'Compra realizada com sucesso!',
+        html: `ID do Pedido: <strong>${fakeOrderId}</strong>`,
+        icon: 'success',
+        confirmButtonText: 'Ver Status do Pedido',
+      });
+  
+      // Salvar localmente e navegar
       localStorage.setItem("orders", JSON.stringify([...savedOrders, newOrder]));
       dispatch(clearCart());
-      navigate("/pedido-status", { state: { orderId: fakeOrderId } });
+      navigate("/meus-pedidos", { state: { orderId: fakeOrderId } });
     } catch (error) {
       console.error("Erro ao processar pagamento:", error);
       if (error.response) {
-        alert(`Erro: ${error.response.data.error || 'Erro ao processar pagamento. Tente novamente.'}`);
+        Swal.fire("Erro", error.response.data.error || "Erro ao processar pagamento. Tente novamente.", "error");
       } else {
-        alert("Erro de rede ou backend indisponível.");
+        Swal.fire("Erro", "Erro de rede ou backend indisponível.", "error");
       }
     }
   };
-
+  
   return (
     <section className="cart-items">
       <Container>
@@ -76,7 +83,12 @@ const Cart = () => {
                 <div className="cart-list" key={item.id}>
                   <Row>
                     <Col className="image-holder" sm={4} md={3}>
-                      <img src={item.imgUrl || "/default-img.png"} alt="" />
+                    <img
+  loading="lazy"
+  src={item.imagem ? `http://localhost:3001/img/${item.imagem.replace(/^\/img\//, '')}` : "/default-img.png"}
+  alt={item.nome}
+/>
+
                     </Col>
                     <Col sm={8} md={9}>
                       <Row className="cart-content justify-content-center">
