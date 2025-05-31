@@ -118,7 +118,7 @@ services:
   pagamento-service:
     build: ./pagamento-service
     ports:
-      - "3005:3000"
+      - "4001:4001"
     env_file: ./pagamento-service/.env   # novo serviço com seu .env
     depends_on:
       db:
