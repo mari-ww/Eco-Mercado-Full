@@ -5,10 +5,36 @@ const MeusPedidos = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    // Simulando múltiplos pedidos
+    // Pega os pedidos do localStorage
     const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-    setOrders(storedOrders);
+    
+    // Clona os pedidos para manipular localmente o status
+    const ordersClone = storedOrders.map(order => ({
+      ...order,
+      products: order.products.map(product => ({
+        ...product,
+        status: product.status || "pendente"
+      }))
+    }));
+
+    setOrders(ordersClone);
     window.scrollTo(0, 0);
+
+    // Timer para atualizar o status de todos os produtos para "Saiu para a entrega" após 5 segundos
+    const timer = setTimeout(() => {
+      setOrders(prevOrders => 
+        prevOrders.map(order => ({
+          ...order,
+          products: order.products.map(product => ({
+            ...product,
+            status: "Saiu para a entrega"
+          }))
+        }))
+      );
+    }, 5000);
+
+    // Cleanup para evitar memory leak caso o componente seja desmontado
+    return () => clearTimeout(timer);
   }, []);
 
   return (
