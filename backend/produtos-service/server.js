@@ -1,9 +1,45 @@
 const express = require('express');
 const cors = require('cors');    // importar cors
-
+const prometheus = require('prom-client');
 const path = require('path');
 
 const app = express();
+
+// ========== CONFIGURAÇÃO PROMETHEUS ==========
+const httpRequestDurationMicroseconds = new prometheus.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duração das requisições HTTP em ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500]
+});
+
+const productRequestsCounter = new prometheus.Counter({
+  name: 'product_requests_total',
+  help: 'Total de requisições para produtos',
+  labelNames: ['endpoint']
+});
+
+// Coletar métricas padrão
+prometheus.collectDefaultMetrics();
+
+// Middleware para medir tempo das requisições
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    httpRequestDurationMicroseconds
+      .labels(req.method, req.route?.path || req.path, res.statusCode)
+      .observe(duration);
+  });
+  next();
+});
+
+// Endpoint para métricas
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', prometheus.register.contentType);
+  res.end(await prometheus.register.metrics());
+});
+// ========== FIM CONFIGURAÇÃO PROMETHEUS ==========
 
 app.use(cors());                // habilitar CORS para todas origens
 app.use('/img', express.static(path.join(__dirname, 'img')))

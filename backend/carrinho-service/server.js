@@ -2,9 +2,46 @@ const express = require('express');
 const amqp = require('amqplib');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const prometheus = require('prom-client');
 
 const app = express();
 app.use(express.json());
+
+// ========== CONFIGURAÇÃO PROMETHEUS ==========
+const httpRequestDurationMicroseconds = new prometheus.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duração das requisições HTTP em ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [0.1, 5, 15, 50, 100, 200, 300, 400, 500]
+});
+
+const cartOperationsCounter = new prometheus.Counter({
+  name: 'cart_operations_total',
+  help: 'Total de operações no carrinho',
+  labelNames: ['operation', 'status']
+});
+
+// Coletar métricas padrão
+prometheus.collectDefaultMetrics();
+
+// Middleware para medir tempo das requisições
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    httpRequestDurationMicroseconds
+      .labels(req.method, req.route?.path || req.path, res.statusCode)
+      .observe(duration);
+  });
+  next();
+});
+
+// Endpoint para métricas
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', prometheus.register.contentType);
+  res.end(await prometheus.register.metrics());
+});
+// ========== FIM CONFIGURAÇÃO PROMETHEUS ==========
 
 // PostgreSQL (mesmo DATABASE_URL apontando para 'db:5432/ecommerce')
 const pool = new Pool({
