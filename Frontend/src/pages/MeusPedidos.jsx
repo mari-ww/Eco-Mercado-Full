@@ -6,7 +6,9 @@ const MeusPedidos = () => {
 
   useEffect(() => {
     // Pega os pedidos do localStorage
-    const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
+    const userEmail = localStorage.getItem("userEmail");
+    const allOrders = JSON.parse(localStorage.getItem("ordersByUser")) || {};
+    const storedOrders = allOrders[userEmail] || [];
     
     // Clona os pedidos para manipular localmente o status
     const ordersClone = storedOrders.map(order => ({

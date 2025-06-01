@@ -31,6 +31,7 @@ const LoginPage = () => {
   
     if (resultado.sucesso) {
       localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userEmail', email);
       window.dispatchEvent(new Event('storage'));
         Swal.fire({
         title: 'Login realizado!',

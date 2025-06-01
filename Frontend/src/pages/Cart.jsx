@@ -29,8 +29,10 @@ const Cart = () => {
 
   const handlePurchase = async () => {
     const fakeOrderId = `ORDER-${Math.floor(Math.random() * 100000)}`;
-    const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
-  
+    const userEmail = localStorage.getItem("userEmail");
+    const allOrders = JSON.parse(localStorage.getItem("ordersByUser")) || {};
+    const userOrders = allOrders[userEmail] || [];
+    
     const newOrder = {
       id: fakeOrderId,
       products: cartList.map((item) => ({
@@ -56,7 +58,11 @@ const Cart = () => {
       });
   
       // Salvar localmente e navegar
-      localStorage.setItem("orders", JSON.stringify([...savedOrders, newOrder]));
+      const updatedOrders = {
+        ...allOrders,
+        [userEmail]: [...userOrders, newOrder],
+      };
+      localStorage.setItem("ordersByUser", JSON.stringify(updatedOrders));
       dispatch(clearCart());
       navigate("/meus-pedidos", { state: { orderId: fakeOrderId } });
     } catch (error) {
