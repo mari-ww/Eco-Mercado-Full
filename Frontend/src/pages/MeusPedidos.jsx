@@ -54,11 +54,12 @@ const MeusPedidos = () => {
   return (
     <Row key={product.id} className="align-items-center border-bottom py-3">
       <Col md={2}>
-        <img
-          src={product.imagem ? `http://localhost:3001/img/${product.imagem}` : '/default-img.png'}
-          alt={product.nome}
-          className="img-fluid"
-        />
+      <img
+  src={product.imagem ? `http://localhost:3001/img/${product.imagem.replace(/^\/img\//, '')}` : '/default-img.png'}
+  alt={product.nome}
+  className="img-fluid"
+/>
+
       </Col>
       <Col md={6}>
         <h6>{product.nome}</h6>

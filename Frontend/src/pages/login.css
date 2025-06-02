@@ -1,35 +1,81 @@
 /* src/pages/login.css */
 
-.login-container {
-    justify-content: center; /* Centraliza horizontalmente */
-    margin-top: 100px;
-    margin-bottom: 100px;
+.login-page-wrapper {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.login-left {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.logo-placeholder img {
+  width: 100px;
+  height: auto;
+}
+
+.login-right {
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.login-right h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2d2d2d;
+}
+
+.form-control {
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+button[type="submit"] {
+  background-color: #7ca97c;
+  border: none;
+  font-weight: bold;
+  border-radius: 8px;
+  padding: 12px;
+  transition: background 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #679867;
+}
+
+@media (max-width: 768px) {
+  .login-page-wrapper {
+    flex-direction: column;
   }
-  
-  .login-form {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 700px;
+
+  .login-left {
+    height: 200px;
+    border-radius: 0;
   }
-  
-  .login-form h2 {
-    margin-bottom: 25px;
-    text-align: center;
-    color: #333;
+
+  .login-right {
+    border-radius: 0;
+    padding: 40px 20px;
   }
-  
-  .form-label {
-    font-weight: 500;
-  }
-  
-  .form-control {
-    border-radius: 6px;
-  }
-  
-  button[type="submit"] {
-    margin-top: 10px;
-  }
-  
+}
