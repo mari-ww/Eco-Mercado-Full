@@ -11,7 +11,6 @@ import { criarPagamento } from "../service/PagamentoService"; // Corrigido impor
 import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 
-
 const Cart = () => {
   const { cartList } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
@@ -32,7 +31,7 @@ const Cart = () => {
     const userEmail = localStorage.getItem("userEmail");
     const allOrders = JSON.parse(localStorage.getItem("ordersByUser")) || {};
     const userOrders = allOrders[userEmail] || [];
-    
+
     const newOrder = {
       id: fakeOrderId,
       products: cartList.map((item) => ({
@@ -41,14 +40,24 @@ const Cart = () => {
       })),
       total: totalPrice,
     };
-  
+
     try {
       const response = await criarPagamento({
         pedidoId: fakeOrderId,
         valor: totalPrice,
         status: "pendente",
       });
-  
+
+      const productsStockRaw = localStorage.getItem("productsStock");
+      let productsStock = productsStockRaw ? JSON.parse(productsStockRaw) : {};
+
+      cartList.forEach(item => {
+        const prevQtde = productsStock[item.id] !== undefined ? productsStock[item.id] : 30;
+        productsStock[item.id] = prevQtde - item.qty;
+      });
+
+      localStorage.setItem("productsStock", JSON.stringify(productsStock));
+
       // SweetAlert de sucesso
       await Swal.fire({
         title: 'Compra realizada com sucesso!',
@@ -56,7 +65,7 @@ const Cart = () => {
         icon: 'success',
         confirmButtonText: 'Ver Status do Pedido',
       });
-  
+
       // Salvar localmente e navegar
       const updatedOrders = {
         ...allOrders,
@@ -74,7 +83,7 @@ const Cart = () => {
       }
     }
   };
-  
+
   return (
     <section className="cart-items">
       <Container>
@@ -89,12 +98,11 @@ const Cart = () => {
                 <div className="cart-list" key={item.id}>
                   <Row>
                     <Col className="image-holder" sm={4} md={3}>
-                    <img
-  loading="lazy"
-  src={item.imagem ? `http://localhost:3001/img/${item.imagem.replace(/^\/img\//, '')}` : "/default-img.png"}
-  alt={item.nome}
-/>
-
+                      <img
+                        loading="lazy"
+                        src={item.imagem ? `http://localhost:3001/img/${item.imagem.replace(/^\/img\//, '')}` : "/default-img.png"}
+                        alt={item.nome}
+                      />
                     </Col>
                     <Col sm={8} md={9}>
                       <Row className="cart-content justify-content-center">
